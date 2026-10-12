@@ -1,0 +1,345 @@
+<%
+  const skins = (a.skins || '').split(',').map(x => x.trim()).filter(Boolean);
+  const min = +s.min_hours, max = +s.max_hours;
+  const quick = s.quick_hours.split(',').map(Number).filter(h => h >= min && h <= max);
+  const st = ACC_STATUS[a.status];
+%>
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <a href="/" class="text-sm text-slate-400 hover:text-white">← กลับไปหน้ารวม</a>
+  <div class="mt-4 grid lg:grid-cols-5 gap-6 items-start">
+
+    <div class="lg:col-span-3 card overflow-hidden">
+      <div class="aspect-video bg-black/30">
+        <% if (a.image_url) { %><img src="<%= a.image_url %>" alt="" class="w-full h-full object-cover">
+        <% } else { %><div class="w-full h-full grid place-items-center text-6xl font-bold text-white/5">VALORANT</div><% } %>
+      </div>
+      <div class="p-6">
+        <span class="badge <%= st.cls %>"><%= st.label %></span>
+        <h1 class="mt-3 text-2xl md:text-3xl font-bold"><%= a.title %></h1>
+        <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <% [['แรงค์', a.rank || 'Unrated'], ['เลเวล', a.level], ['เอเจนต์', a.agents_count + ' ตัว'], ['เซิร์ฟเวอร์', a.region]].forEach(([k, v]) => { %>
+            <div class="bg-ink rounded-lg p-3 border border-line">
+              <div class="text-xs text-slate-400"><%= k %></div>
+              <div class="font-semibold mt-0.5"><%= v %></div>
+            </div>
+          <% }) %>
+        </div>
+        <% if (skins.length) { %>
+          <h3 class="mt-6 mb-2 font-semibold">สกินเด่น</h3>
+          <div class="flex flex-wrap gap-2">
+            <% skins.forEach(sk => { %><span class="px-3 py-1 rounded-lg bg-white/5 ring-1 ring-white/10 text-sm"><%= sk %></span><% }) %>
+          </div>
+        <% } %>
+        <% if (a.description) { %>
+          <h3 class="mt-6 mb-2 font-semibold">รายละเอียด</h3>
+          <p class="text-slate-300 whitespace-pre-line leading-relaxed"><%= a.description %></p>
+        <% } %>
+      </div>
+    </div>
+
+    <aside class="lg:col-span-2 lg:sticky lg:top-24">
+      <div class="card p-5">
+        <div class="flex items-baseline justify-between">
+          <span class="text-slate-400 text-sm">ราคาเช่า</span>
+          <div><span class="text-3xl font-bold text-p">฿<%= money(a.price_per_hour) %></span><span class="text-slate-400">/ชม.</span></div>
+        </div>
+        <% if (+s.discount_percent > 0) { %>
+          <p class="mt-3 text-xs bg-emerald-500/10 text-emerald-300 rounded-lg px-3 py-2">🎁 เช่าตั้งแต่ <%= s.discount_hours %> ชม. ขึ้นไป ลดทันที <%= s.discount_percent %>%</p>
+        <% } %>
+        <hr class="my-5 border-line">
+
+        <% if (a.status !== 'available') { %>
+          <div class="text-center py-6">
+            <div class="text-4xl mb-2">⏳</div>
+            <p class="font-semibold">ไอดีนี้ไม่ว่างในขณะนี้</p>
+            <p class="text-sm text-slate-400 mt-1">ลองเลือกไอดีอื่น หรือกลับมาใหม่ภายหลัง</p>
+            <a href="/" class="btn btn-g mt-4">ดูไอดีอื่น</a>
+          </div>
+        <% } else if (!user) { %>
+          <div class="text-center py-4">
+            <p class="text-slate-300">เข้าสู่ระบบเพื่อเช่าไอดีนี้</p>
+            <a href="/login?next=/account/<%= a.id %>" class="btn btn-p w-full mt-4">เข้าสู่ระบบ</a>
+            <% if (s.allow_register === '1') { %><a href="/register" class="btn btn-g w-full mt-2">สมัครสมาชิก</a><% } %>
+          </div>
+        <% } else { %>
+        <form id="rentForm" method="post" action="/account/<%= a.id %>/rent?_csrf=<%= csrf %>" enctype="multipart/form-data" class="space-y-6">
+          
+          <% if (s.discord_delivery === '1') { %>
+          <div>
+            <div class="flex items-center gap-2 mb-3 font-semibold"><span class="step">1</span>ยืนยัน Discord ticket</div>
+            <div id="tkDone" class="<%= ticket ? '' : 'hidden' %> bg-emerald-500/10 ring-1 ring-emerald-500/30 rounded-lg p-3 flex items-center justify-between gap-3 text-sm">
+              <span>✅ รหัสจะถูกส่งเข้า <b id="tkName">#<%= ticket ? ticket.name : '' %></b></span>
+              <button type="button" id="tkReset" class="text-xs text-slate-400 hover:text-white underline">เปลี่ยนห้อง</button>
+            </div>
+            <div id="tkForm" class="<%= ticket ? 'hidden' : '' %> space-y-3">
+              <p class="text-sm text-slate-300 whitespace-pre-line leading-relaxed"><%= s.ticket_instructions %></p>
+              <% if (s.discord_invite_url) { %>
+                <a href="<%= s.discord_invite_url %>" target="_blank" rel="noopener" class="btn btn-g btn-sm w-full">💬 เข้าเซิร์ฟเวอร์ Discord ของร้าน ↗</a>
+              <% } %>
+              <div class="flex gap-2">
+                <input id="tkInput" class="inp" placeholder="ชื่อห้อง เช่น ticket-0123" autocomplete="off">
+                <button type="button" id="tkSend" class="btn btn-g whitespace-nowrap">ส่งรหัสยืนยัน</button>
+              </div>
+              <div id="tkCodeRow" class="hidden flex gap-2">
+                <input id="tkCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="inp text-center font-mono tracking-[.5em]" placeholder="000000">
+                <button type="button" id="tkVerify" class="btn btn-p whitespace-nowrap">ยืนยัน</button>
+              </div>
+              <p id="tkMsg" class="text-xs"></p>
+            </div>
+          </div>
+          <% } %>
+
+          <% if (s.anydesk_delivery === '1') { %>
+          <div>
+            <div class="flex items-center gap-2 mb-3 font-semibold"><span class="step">1</span>ใส่เลข AnyDesk</div>
+            <div id="adDone" class="<%= session.anydesk_id ? '' : 'hidden' %> bg-emerald-500/10 ring-1 ring-emerald-500/30 rounded-lg p-3 flex items-center justify-between gap-3 text-sm">
+              <span>✅ AnyDesk ID: <b id="adNum"><%= session.anydesk_id || '' %></b></span>
+              <button type="button" id="adReset" class="text-xs text-slate-400 hover:text-white underline">เปลี่ยน</button>
+            </div>
+            <div id="adForm" class="<%= session.anydesk_id ? 'hidden' : '' %> space-y-3">
+              <p class="text-sm text-slate-300 whitespace-pre-line leading-relaxed"><%= s.anydesk_instructions %></p>
+              <a href="https://anydesk.com/th/downloads" target="_blank" rel="noopener" class="btn btn-g btn-sm w-full">📥 ดาวน์โหลด AnyDesk ↗</a>
+              <div class="flex gap-2">
+                <input id="adInput" inputmode="numeric" maxlength="9" class="inp text-center font-mono tracking-widest" placeholder="123456789" autocomplete="off">
+                <button type="button" id="adSave" class="btn btn-p whitespace-nowrap">บันทึก</button>
+              </div>
+              <p id="adMsg" class="text-xs"></p>
+            </div>
+          </div>
+          <% } %>
+
+          <div>
+            <div class="flex items-center gap-2 mb-3 font-semibold"><span class="step"><%= s.discord_delivery === '1' ? 2 : s.anydesk_delivery === '1' ? 2 : 1 %></span>เลือกจำนวนชั่วโมง</div>
+            <% if (quick.length) { %>
+            <div class="flex flex-wrap gap-2 mb-3">
+              <% quick.forEach(h => { %>
+                <button type="button" data-h="<%= h %>" class="chip px-3 py-1.5 rounded-lg text-sm ring-1 ring-line hover:ring-p transition"><%= h %> ชม.</button>
+              <% }) %>
+            </div>
+            <% } %>
+            <div class="flex items-center gap-2">
+              <button type="button" id="dec" class="btn btn-g w-12 h-11 p-0 text-xl">−</button>
+              <input id="hours" name="hours" type="number" min="<%= min %>" max="<%= max %>" value="<%= quick[0] || min %>" class="inp text-center text-lg font-semibold">
+              <button type="button" id="inc" class="btn btn-g w-12 h-11 p-0 text-xl">+</button>
+            </div>
+            <p class="text-xs text-slate-500 mt-1.5">ขั้นต่ำ <%= min %> ชม. · สูงสุด <%= max %> ชม.</p>
+            <div class="mt-3 bg-ink rounded-lg p-4 border border-line text-sm space-y-1.5">
+              <div class="flex justify-between text-slate-400"><span>฿<%= money(a.price_per_hour) %> × <span id="hTxt"></span> ชม.</span><span id="subTxt"></span></div>
+              <div id="discRow" class="hidden flex justify-between text-emerald-400"><span>ส่วนลด <%= s.discount_percent %>%</span><span id="discTxt"></span></div>
+              <div class="flex justify-between items-baseline pt-2 border-t border-line">
+                <span>ยอดที่ต้องโอน</span><span class="text-2xl font-bold text-p">฿<span id="totalTxt"></span></span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-3 font-semibold"><span class="step"><%= s.discord_delivery === '1' ? 3 : s.anydesk_delivery === '1' ? 3 : 2 %></span>โอนเงิน</div>
+            <% if (s.promptpay_id) { %>
+              <div class="bg-white rounded-xl p-3 w-52 mx-auto"><img id="qr" alt="PromptPay QR" class="w-full aspect-square"></div>
+              <p class="text-center text-xs text-slate-400 mt-2">สแกนด้วยแอปธนาคาร ยอดเงินจะถูกใส่ให้อัตโนมัติ</p>
+            <% } %>
+            <% if (s.bank_account_no) { %>
+              <div class="mt-3 bg-ink border border-line rounded-lg p-3 flex items-center justify-between gap-3">
+                <div class="text-sm min-w-0">
+                  <div class="text-slate-400"><%= s.bank_name %></div>
+                  <div class="font-semibold text-lg tracking-wider"><%= s.bank_account_no %></div>
+                  <div class="text-slate-300 truncate"><%= s.bank_account_name %></div>
+                </div>
+                <button type="button" data-copy="<%= s.bank_account_no.replace(/\D/g, '') %>" class="btn btn-g btn-sm shrink-0">คัดลอก</button>
+              </div>
+            <% } %>
+            <% if (s.payment_note) { %><p class="mt-2 text-xs text-amber-300/90 whitespace-pre-line"><%= s.payment_note %></p><% } %>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-3 font-semibold"><span class="step"><%= s.discord_delivery === '1' ? 4 : s.anydesk_delivery === '1' ? 4 : 3 %></span>แนบสลิป</div>
+            <label id="drop" class="relative block border-2 border-dashed border-line rounded-xl p-5 text-center cursor-pointer hover:border-p transition">
+              <input id="slip" type="file" name="slip" accept="image/jpeg,image/png,image/webp" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+              <div id="dropHint">
+                <div class="text-3xl">🧾</div>
+                <p class="mt-1 text-sm">คลิกหรือลากไฟล์สลิปมาวาง</p>
+                <p class="text-xs text-slate-500">JPG / PNG / WEBP ไม่เกิน <%= s.max_slip_mb %>MB</p>
+              </div>
+              <img id="preview" alt="" class="hidden mx-auto max-h-72 rounded-lg">
+            </label>
+          </div>
+
+          <label class="flex items-start gap-2 text-sm text-slate-300 cursor-pointer">
+            <input type="checkbox" required class="mt-1 w-4 h-4"> ฉันได้อ่านและยอมรับ <a href="/rules" target="_blank" class="text-p underline">กติกาการเช่า</a>
+          </label>
+          <% const needTicket = s.discord_delivery === '1' && !ticket; %>
+          <% const needAnydesk = s.anydesk_delivery === '1' && !session.anydesk_id; %>
+          <button id="submitBtn" class="btn btn-p w-full py-3 text-lg cut" <%= needTicket || needAnydesk ? 'disabled' : '' %>>ยืนยันการเช่า</button>
+          <p id="tkHint" class="<%= needTicket ? '' : 'hidden' %> text-xs text-center text-amber-300">กรุณายืนยัน Discord ticket ในขั้นตอนที่ 1 ก่อน</p>
+          <p id="adHint" class="<%= needAnydesk ? '' : 'hidden' %> text-xs text-center text-amber-300">กรุณาใส่เลข AnyDesk ในขั้นตอนที่ 1 ก่อน</p>
+          <p class="text-xs text-center text-slate-500">⏱ เวลาเช่าจะเริ่มนับหลังแอดมินอนุมัติเท่านั้น</p>
+        </form>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<% if (user && a.status === 'available') { %>
+<script>
+(() => {
+  const PPH = <%= a.price_per_hour %>, MIN = <%= min %>, MAX = <%= max %>, DH = <%= +s.discount_hours %>, DP = <%= +s.discount_percent %>, MAXMB = <%= +s.max_slip_mb %>;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+  let qrTimer;
+
+  function calc() {
+    let h = parseInt($('hours').value, 10);
+    if (isNaN(h)) h = MIN;
+    h = Math.min(MAX, Math.max(MIN, h));
+    $('hours').value = h;
+    const sub = PPH * h;
+    const disc = DP > 0 && h >= DH ? Math.round(sub * DP) / 100 : 0;
+    const total = Math.round((sub - disc) * 100) / 100;
+    $('hTxt').textContent = h;
+    $('subTxt').textContent = '฿' + fmt(sub);
+    $('discTxt').textContent = '-฿' + fmt(disc);
+    $('discRow').classList.toggle('hidden', !disc);
+    $('totalTxt').textContent = fmt(total);
+    document.querySelectorAll('.chip').forEach((c) => {
+      const on = +c.dataset.h === h;
+      c.classList.toggle('bg-p', on); c.classList.toggle('text-white', on);
+    });
+    if ($('qr')) { clearTimeout(qrTimer); qrTimer = setTimeout(() => ($('qr').src = '/qr?amount=' + total), 250); }
+  }
+
+  document.querySelectorAll('.chip').forEach((c) => (c.onclick = () => { $('hours').value = c.dataset.h; calc(); }));
+  $('dec').onclick = () => { $('hours').value = +$('hours').value - 1; calc(); };
+  $('inc').onclick = () => { $('hours').value = +$('hours').value + 1; calc(); };
+  $('hours').addEventListener('change', calc);
+
+  const slip = $('slip'), drop = $('drop');
+  if (slip) {
+    slip.addEventListener('change', () => {
+      const f = slip.files[0];
+      if (!f) return;
+      if (f.size > MAXMB * 1048576) { alert('ไฟล์ใหญ่เกิน ' + MAXMB + 'MB'); slip.value = ''; return; }
+      $('preview').src = URL.createObjectURL(f);
+      $('preview').classList.remove('hidden');
+      $('dropHint').classList.add('hidden');
+      drop.classList.add('border-p');
+    });
+    ['dragenter', 'dragover'].forEach((e) => slip.addEventListener(e, () => drop.classList.add('border-p', 'bg-white/5')));
+    ['dragleave', 'drop'].forEach((e) => slip.addEventListener(e, () => drop.classList.remove('bg-white/5')));
+  }
+  const form = $('rentForm');
+  if (form) form.addEventListener('submit', () => { const b = $('submitBtn'); if(b) { b.disabled = true; b.textContent = 'กำลังส่ง...'; } });
+  calc();
+})();
+</script>
+<% } %>
+
+<% if (user && a.status === 'available' && s.discord_delivery === '1') { %>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const CSRF = <%- JSON.stringify(csrf) %>;
+  const say = (t, ok) => { $('tkMsg').textContent = t; $('tkMsg').className = 'text-xs ' + (ok ? 'text-emerald-300' : 'text-rose-300'); };
+  const setVerified = (v, name) => {
+    $('submitBtn').disabled = !v;
+    $('tkHint').classList.toggle('hidden', v);
+    $('tkDone').classList.toggle('hidden', !v);
+    $('tkForm').classList.toggle('hidden', v);
+    if (name) $('tkName').textContent = '#' + name;
+  };
+  async function post(url, data, btn) {
+    if (btn) btn.disabled = true;
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ _csrf: CSRF, ...data }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+      return j;
+    } finally { if (btn) btn.disabled = false; }
+  }
+  const tkSend = $('tkSend');
+  if (tkSend) tkSend.onclick = async () => {
+    say('กำลังส่งรหัส...', true);
+    try {
+      const j = await post('/ticket/request', { channel: $('tkInput').value }, tkSend);
+      $('tkCodeRow').classList.remove('hidden');
+      $('tkCode').value = ''; $('tkCode').focus();
+      say(`ส่งรหัสเข้า #${j.name} แล้ว เปิด Discord ดูรหัส 6 หลัก แล้วกรอกด้านบน`, true);
+    } catch (e) { say(e.message); }
+  };
+  const tkVerify = $('tkVerify');
+  if (tkVerify) tkVerify.onclick = async () => {
+    try {
+      const j = await post('/ticket/verify', { code: $('tkCode').value }, tkVerify);
+      say(''); setVerified(true, j.name);
+    } catch (e) { say(e.message); }
+  };
+  const tkReset = $('tkReset');
+  if (tkReset) tkReset.onclick = async () => {
+    await post('/ticket/reset', {}).catch(() => {});
+    $('tkCodeRow').classList.add('hidden'); say(''); setVerified(false);
+  };
+  [['tkInput', 'tkSend'], ['tkCode', 'tkVerify']].forEach(([i, b]) => {
+    const el = $(i);
+    if (el) el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $(b).click(); } });
+  });
+})();
+</script>
+<% } %>
+
+<% if (user && a.status === 'available' && s.anydesk_delivery === '1') { %>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const CSRF = <%- JSON.stringify(csrf) %>;
+  const say = (t, ok) => { $('adMsg').textContent = t; $('adMsg').className = 'text-xs ' + (ok ? 'text-emerald-300' : 'text-rose-300'); };
+  const setVerified = (v, num) => {
+    $('submitBtn').disabled = !v;
+    $('adHint').classList.toggle('hidden', v);
+    $('adDone').classList.toggle('hidden', !v);
+    $('adForm').classList.toggle('hidden', v);
+    if (num) $('adNum').textContent = num;
+  };
+  async function post(url, data, btn) {
+    if (btn) btn.disabled = true;
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ _csrf: CSRF, ...data }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+      return j;
+    } finally { if (btn) btn.disabled = false; }
+  }
+  const adSave = $('adSave');
+  if (adSave) adSave.onclick = async () => {
+    const val = $('adInput').value.replace(/\D/g, '');
+    $('adInput').value = val;
+    if (val.length !== 9) { say('กรุณาใส่เลข AnyDesk 9 หลัก'); return; }
+    say('กำลังบันทึก...', true);
+    try {
+      await post('/anydesk/save', { anydesk_id: val }, adSave);
+      say(''); setVerified(true, val);
+    } catch (e) { say(e.message); }
+  };
+  const adReset = $('adReset');
+  if (adReset) adReset.onclick = () => {
+    $('adInput').value = ''; say(''); setVerified(false);
+  };
+  const adInput = $('adInput');
+  if (adInput) {
+    adInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 9);
+    });
+    adInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); adSave.click(); }
+    });
+  }
+})();
+</script>
+<% } %>

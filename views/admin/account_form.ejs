@@ -1,0 +1,60 @@
+<%
+  const ranks = s.rank_list.split(',').map(r => r.trim()).filter(Boolean);
+  const locked = ['reserved', 'rented'].includes(a.status);
+  const v = (k) => a[k] ?? '';
+%>
+<a href="/admin/accounts" class="text-sm text-slate-400 hover:text-white">← กลับ</a>
+<form method="post" action="<%= a.id ? '/admin/accounts/' + a.id : '/admin/accounts' %>?_csrf=<%= csrf %>" enctype="multipart/form-data" class="mt-4 grid lg:grid-cols-3 gap-6 items-start">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="card p-6 grid sm:grid-cols-2 gap-4">
+      <h2 class="sm:col-span-2 font-semibold">ข้อมูลที่แสดงหน้าเว็บ</h2>
+      <div class="sm:col-span-2"><label class="lbl">ชื่อไอดี / หัวข้อ *</label><input name="title" value="<%= v('title') %>" class="inp" required placeholder="เช่น Immortal 3 · Vandal Kuronami + Champions"></div>
+      <div><label class="lbl">แรงค์</label><input name="rank" value="<%= v('rank') %>" list="rankList" class="inp" placeholder="Ascendant 2"><datalist id="rankList"><% ranks.forEach(r => { %><option><%= r %></option><% }) %></datalist></div>
+      <div><label class="lbl">เลเวล</label><input type="number" name="level" value="<%= v('level') %>" class="inp"></div>
+      <div><label class="lbl">เซิร์ฟเวอร์</label>
+        <select name="region" class="inp"><% ['AP', 'NA', 'EU', 'KR', 'LATAM', 'BR'].forEach(r => { %><option <%= a.region === r ? 'selected' : '' %>><%= r %></option><% }) %></select></div>
+      <div><label class="lbl">จำนวนเอเจนต์</label><input type="number" name="agents_count" value="<%= v('agents_count') %>" class="inp"></div>
+      <div><label class="lbl">ราคาต่อชั่วโมง (บาท) *</label><input type="number" step="0.01" name="price_per_hour" value="<%= v('price_per_hour') %>" class="inp" required></div>
+      <div><label class="lbl">ลำดับการแสดง (มาก = อยู่บน)</label><input type="number" name="sort_order" value="<%= v('sort_order') %>" class="inp"></div>
+      <div class="sm:col-span-2"><label class="lbl">สกินเด่น (คั่นด้วย ,)</label><textarea name="skins" rows="2" class="inp"><%= v('skins') %></textarea></div>
+      <div class="sm:col-span-2"><label class="lbl">รายละเอียดเพิ่มเติม</label><textarea name="description" rows="4" class="inp"><%= v('description') %></textarea></div>
+    </div>
+
+    <div class="card p-6 grid sm:grid-cols-2 gap-4">
+      <h2 class="sm:col-span-2 font-semibold">🔐 ข้อมูลล็อกอิน <span class="text-xs text-slate-500 font-normal">(เข้ารหัส AES-256 ก่อนบันทึก)</span></h2>
+      <div><label class="lbl">Riot Username *</label><input name="riot_username" value="<%= v('riot_username') %>" class="inp font-mono" required autocomplete="off"></div>
+      <div><label class="lbl">รหัสผ่าน <%= a.id ? '' : '*' %></label><input type="text" name="riot_password" class="inp font-mono" autocomplete="off" <%= a.id ? 'placeholder=เว้นว่างหากไม่เปลี่ยน' : 'required' %>></div>
+      <% if (currentPass) { %>
+        <div class="sm:col-span-2 bg-ink border border-line rounded-lg p-3 flex items-center gap-3 text-sm">
+          <span class="text-slate-400">รหัสปัจจุบัน:</span>
+          <span id="curpw" data-value="<%= currentPass %>" data-hidden="1" class="font-mono flex-1">••••••••</span>
+          <button type="button" data-reveal="curpw" class="btn btn-g btn-sm">👁</button>
+          <button type="button" data-copy="<%= currentPass %>" class="btn btn-g btn-sm">คัดลอก</button>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="space-y-6 lg:sticky lg:top-6">
+    <div class="card p-6 space-y-3">
+      <h2 class="font-semibold">รูปภาพ</h2>
+      <div class="aspect-video bg-ink rounded-lg overflow-hidden border border-line"><img id="imgPrev" src="<%= v('image_url') %>" alt="" class="w-full h-full object-cover <%= a.image_url ? '' : 'hidden' %>"></div>
+      <input type="file" name="image" accept="image/*" class="text-sm w-full file:btn file:btn-g file:mr-3 file:border-0" onchange="if(this.files[0]){imgPrev.src=URL.createObjectURL(this.files[0]);imgPrev.classList.remove('hidden')}">
+      <div><label class="lbl">หรือใส่ลิงก์รูป</label><input name="image_url" value="<%= v('image_url') %>" class="inp text-sm" placeholder="https://..."></div>
+    </div>
+    <div class="card p-6 space-y-4">
+      <div><label class="lbl">สถานะ</label>
+        <% if (locked) { %>
+          <p class="text-sm text-amber-300">ไอดีกำลังถูกจอง/เช่าอยู่ เปลี่ยนสถานะไม่ได้</p>
+        <% } else { %>
+          <select name="status" class="inp">
+            <option value="available" <%= a.status !== 'maintenance' ? 'selected' : '' %>>ว่าง (เปิดให้เช่า)</option>
+            <option value="maintenance" <%= a.status === 'maintenance' ? 'selected' : '' %>>ปิดปรับปรุง</option>
+          </select>
+        <% } %>
+      </div>
+      <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" name="is_visible" value="1" <%= a.is_visible ? 'checked' : '' %> class="w-4 h-4"> แสดงบนหน้าเว็บ</label>
+      <button class="btn btn-p w-full py-3">💾 บันทึก</button>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,18 @@
+<div class="min-h-[70vh] grid place-items-center px-4 py-12">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="w-14 h-14 bg-p cut grid place-items-center text-2xl font-bold mx-auto">V</div>
+      <h1 class="text-2xl font-bold mt-4">สมัครสมาชิก</h1>
+      <p class="text-slate-400 text-sm mt-1">ใช้เวลาไม่ถึง 1 นาที</p>
+    </div>
+    <form method="post" action="/register" class="card p-6 space-y-4">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div><label class="lbl">ชื่อผู้ใช้</label><input name="username" class="inp" required pattern="[a-zA-Z0-9_]{4,20}" placeholder="a-z, 0-9, _ (4-20 ตัว)" autocomplete="username"></div>
+      <div><label class="lbl">ช่องทางติดต่อ (LINE / เบอร์โทร)</label><input name="contact" class="inp" placeholder="ไว้ให้แอดมินติดต่อกลับ"></div>
+      <div><label class="lbl">รหัสผ่าน</label><input type="password" name="password" class="inp" required minlength="8" autocomplete="new-password"></div>
+      <div><label class="lbl">ยืนยันรหัสผ่าน</label><input type="password" name="confirm" class="inp" required minlength="8" autocomplete="new-password"></div>
+      <button class="btn btn-p w-full py-3">สมัครสมาชิก</button>
+    </form>
+    <p class="text-center text-sm text-slate-400 mt-5">มีบัญชีแล้ว? <a href="/login" class="text-p hover:underline">เข้าสู่ระบบ</a></p>
+  </div>
+</div>

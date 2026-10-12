@@ -1,0 +1,86 @@
+<% const ranks = s.rank_list.split(',').map(r => r.trim()).filter(Boolean); %>
+<section class="relative overflow-hidden border-b border-line">
+  <div class="absolute -top-40 -right-40 w-[36rem] h-[36rem] rounded-full bg-p opacity-20 blur-3xl"></div>
+  <div class="relative max-w-7xl mx-auto px-4 py-14 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+    <div>
+      <p class="text-p font-semibold tracking-[.35em] text-xs mb-4">VALORANT ACCOUNT RENTAL</p>
+      <h1 class="text-4xl md:text-6xl font-bold leading-[1.1]"><%= s.site_name %></h1>
+      <p class="mt-4 text-lg text-slate-300 max-w-lg"><%= s.site_tagline %></p>
+      <div class="mt-8 flex gap-3">
+        <a href="#list" class="btn btn-p cut px-7">เลือกไอดีเลย</a>
+        <a href="/rules" class="btn btn-g">อ่านกติกา</a>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <% [['01', 'เลือกไอดี & ชั่วโมง'], ['02', 'โอนเงิน + แนบสลิป'], ['03', 'รอแอดมินตรวจสอบ'], ['04', 'รับรหัส เริ่มนับเวลา']].forEach(([n, t]) => { %>
+        <div class="card p-5 hover:border-p transition">
+          <div class="text-3xl font-bold text-p"><%= n %></div>
+          <div class="mt-1 text-sm text-slate-300"><%= t %></div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section id="list" class="max-w-7xl mx-auto px-4 py-10">
+  <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
+    <div>
+      <h2 class="text-2xl font-bold">ไอดีให้เช่า</h2>
+      <p class="text-sm text-slate-400">ว่างอยู่ <b class="text-emerald-400"><%= stats.free %></b> จากทั้งหมด <%= stats.total %> ไอดี</p>
+    </div>
+    <form method="get" action="/" class="flex flex-wrap gap-2 items-center">
+      <input name="q" value="<%= query.q || '' %>" placeholder="ค้นหาชื่อ / สกิน..." class="inp w-full sm:w-56">
+      <select name="rank" class="inp w-auto">
+        <option value="">ทุกแรงค์</option>
+        <% ranks.forEach(r => { %><option <%= query.rank === r ? 'selected' : '' %>><%= r %></option><% }) %>
+      </select>
+      <select name="sort" class="inp w-auto">
+        <option value="">แนะนำ</option>
+        <option value="price_asc" <%= query.sort === 'price_asc' ? 'selected' : '' %>>ราคาต่ำ → สูง</option>
+        <option value="price_desc" <%= query.sort === 'price_desc' ? 'selected' : '' %>>ราคาสูง → ต่ำ</option>
+        <option value="newest" <%= query.sort === 'newest' ? 'selected' : '' %>>ล่าสุด</option>
+      </select>
+      <label class="flex items-center gap-2 text-sm px-2 cursor-pointer">
+        <input type="checkbox" name="onlyFree" value="1" <%= query.onlyFree ? 'checked' : '' %> class="w-4 h-4"> เฉพาะที่ว่าง
+      </label>
+      <button class="btn btn-p">ค้นหา</button>
+    </form>
+  </div>
+
+  <% if (!accounts.length) { %>
+    <div class="card p-16 text-center text-slate-400">
+      <div class="text-5xl mb-3">🔍</div>ไม่พบไอดีที่ตรงกับเงื่อนไข
+    </div>
+  <% } %>
+
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    <% accounts.forEach(a => { const st = ACC_STATUS[a.status]; %>
+    <a href="/account/<%= a.id %>" class="group card overflow-hidden hover:border-p hover:-translate-y-1 transition duration-300 <%= a.status !== 'available' ? 'opacity-60' : '' %>">
+      <div class="aspect-video bg-black/30 relative overflow-hidden">
+        <% if (a.image_url) { %>
+          <img src="<%= a.image_url %>" alt="" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <% } else { %>
+          <div class="w-full h-full grid place-items-center text-4xl font-bold text-white/5">VALORANT</div>
+        <% } %>
+        <span class="absolute top-3 left-3 badge <%= st.cls %>"><%= st.label %></span>
+        <span class="absolute top-3 right-3 badge bg-black/60 text-white ring-white/10"><%= a.region %></span>
+      </div>
+      <div class="p-4">
+        <div class="flex items-start justify-between gap-2">
+          <h3 class="font-semibold line-clamp-1"><%= a.title %></h3>
+          <span class="text-xs text-slate-400 whitespace-nowrap">Lv.<%= a.level %></span>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="badge bg-white/5 text-slate-200 ring-white/10">🏆 <%= a.rank || 'Unrated' %></span>
+          <span class="badge bg-white/5 text-slate-200 ring-white/10">👤 <%= a.agents_count %> Agents</span>
+        </div>
+        <% if (a.skins) { %><p class="mt-2 text-xs text-slate-400 line-clamp-2"><%= a.skins %></p><% } %>
+        <div class="mt-4 flex items-end justify-between">
+          <div><span class="text-2xl font-bold text-p">฿<%= money(a.price_per_hour) %></span><span class="text-sm text-slate-400">/ชม.</span></div>
+          <span class="text-sm text-slate-400 group-hover:text-p transition">ดูเพิ่ม →</span>
+        </div>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+</section>

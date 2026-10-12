@@ -1,0 +1,138 @@
+<% const pendingN = orders.filter(o => o.status === 'pending_review').length; %>
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold">ประวัติการเช่า</h1>
+  <p class="text-sm text-slate-400 mt-1">รหัสจะแสดงหลังแอดมินอนุมัติ และจะซ่อนเองเมื่อหมดเวลา</p>
+
+  <% if (!orders.length) { %>
+    <div class="card p-14 text-center mt-6">
+      <div class="text-5xl">🧾</div>
+      <p class="mt-3 text-slate-300">ยังไม่มีประวัติการเช่า</p>
+      <a href="/" class="btn btn-p mt-5">เลือกไอดีเลย</a>
+    </div>
+  <% } %>
+
+  <div class="space-y-4 mt-6">
+  <% orders.forEach(o => { const st = ORDER_STATUS[o.status]; %>
+    <div class="card overflow-hidden <%= o.cred ? 'ring-1 ring-p' : '' %>">
+      <div class="p-4 flex gap-4 items-center">
+        <div class="w-20 h-14 sm:w-28 sm:h-16 rounded-lg overflow-hidden bg-ink shrink-0">
+          <% if (o.image_url) { %><img src="<%= o.image_url %>" alt="" class="w-full h-full object-cover"><% } %>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="font-semibold truncate"><%= o.title %></h3>
+            <span class="badge <%= st.cls %>"><%= st.label %></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">#<%= o.code %> · <%= dt(o.created_at) %></p>
+          <p class="text-sm mt-1"><%= o.hours %> ชม. · <b class="text-p">฿<%= money(o.total) %></b></p>
+        </div>
+      </div>
+
+      <% if (o.cred) { %>
+        <div class="border-t border-line bg-black/20 p-4 grid md:grid-cols-5 gap-4">
+          <div class="md:col-span-3 space-y-2">
+            <div class="bg-ink border border-line rounded-lg p-3 flex items-center gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="text-xs text-slate-400">Username</div>
+                <div class="font-mono font-semibold truncate"><%= o.cred.user %></div>
+              </div>
+              <button type="button" data-copy="<%= o.cred.user %>" class="btn btn-g btn-sm">คัดลอก</button>
+            </div>
+            <div class="bg-ink border border-line rounded-lg p-3 flex items-center gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="text-xs text-slate-400">Password</div>
+                <div id="pw<%= o.id %>" data-value="<%= o.cred.pass %>" data-hidden="1" class="font-mono font-semibold truncate">••••••••</div>
+              </div>
+              <button type="button" data-reveal="pw<%= o.id %>" class="btn btn-g btn-sm">👁</button>
+              <button type="button" data-copy="<%= o.cred.pass %>" class="btn btn-g btn-sm">คัดลอก</button>
+            </div>
+          </div>
+          <div class="md:col-span-2 bg-ink border border-line rounded-lg p-4 flex flex-col justify-center">
+            <div class="text-xs text-slate-400">เวลาคงเหลือ</div>
+            <div id="cd<%= o.id %>" data-end="<%= o.end_at %>" data-start="<%= o.start_at %>" class="text-3xl font-bold font-mono text-p tabular-nums">--:--:--</div>
+            <div class="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden"><div data-bar="cd<%= o.id %>" class="h-full bg-p transition-all" style="width:100%"></div></div>
+            <div class="text-xs text-slate-400 mt-2">หมดเวลา <%= dt(o.end_at) %></div>
+          </div>
+        </div>
+      <% } else if (o.status === 'active') { %>
+        <% if (o.anydesk_id && o.remote_status) { %>
+          <div class="border-t border-line bg-black/20 p-4 grid md:grid-cols-5 gap-4">
+            <div class="md:col-span-3 bg-ink border border-line rounded-lg p-4 text-sm space-y-3">
+              <div>
+                <div class="font-semibold flex items-center gap-2">
+                  <% if (o.remote_status === 'waiting') { %>🕐 รอแอดมิน Remote Login
+                  <% } else if (o.remote_status === 'in_progress') { %>⚡ แอดมินกำลัง Remote เข้ามา
+                  <% } else if (o.remote_status === 'completed') { %>✅ Login สำเร็จแล้ว
+                  <% } else if (o.remote_status === 'failed') { %>❌ Login ไม่สำเร็จ
+                  <% } %>
+                </div>
+                <% if (o.remote_status === 'waiting') { %>
+                  <p class="text-slate-400 mt-1">กรุณาเปิด AnyDesk และหน้า QR Code ของ Valorant ไว้ รอแอดมินเข้ามาสแกนให้ (ใช้เวลาประมาณ 5-10 นาที)</p>
+                  <div class="mt-2 bg-amber-500/10 text-amber-300 rounded-lg px-3 py-2 text-xs">
+                    AnyDesk ID: <b class="text-lg"><%= o.anydesk_id %></b>
+                  </div>
+                <% } else if (o.remote_status === 'in_progress') { %>
+                  <p class="text-slate-400 mt-1">แอดมินกำลัง remote เข้ามาสแกน QR Code ให้ กรุณาอย่าปิด AnyDesk และหน้าเกม</p>
+                <% } else if (o.remote_status === 'completed') { %>
+                  <p class="text-emerald-300 mt-1">เข้าเกมสำเร็จแล้ว! สามารถเริ่มเล่นได้เลย</p>
+                <% } else if (o.remote_status === 'failed') { %>
+                  <p class="text-rose-300 mt-1">ไม่สามารถ login ได้ กรุณาติดต่อแอดมิน · เหตุผล: <%= o.admin_note || 'ไม่ระบุ' %></p>
+                <% } %>
+              </div>
+            </div>
+            <div class="md:col-span-2 bg-ink border border-line rounded-lg p-4 flex flex-col justify-center">
+              <div class="text-xs text-slate-400">เวลาคงเหลือ</div>
+              <div id="cd<%= o.id %>" data-end="<%= o.end_at %>" data-start="<%= o.start_at %>" class="text-3xl font-bold font-mono text-p tabular-nums">--:--:--</div>
+              <div class="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden"><div data-bar="cd<%= o.id %>" class="h-full bg-p transition-all" style="width:100%"></div></div>
+              <div class="text-xs text-slate-400 mt-2">หมดเวลา <%= dt(o.end_at) %></div>
+            </div>
+          </div>
+        <% } else if (o.ticket_channel_name) { %>
+        <div class="border-t border-line bg-black/20 p-4 grid md:grid-cols-5 gap-4">
+          <div class="md:col-span-3 bg-ink border border-line rounded-lg p-4 text-sm">
+            <div class="font-semibold">📨 ส่งรหัสเข้า Discord แล้ว</div>
+            <p class="text-slate-400 mt-1">เปิดห้อง <b class="text-slate-200">#<%= o.ticket_channel_name %></b> ในเซิร์ฟเวอร์ของร้านเพื่อดู Username / Password</p>
+            <% if (s.discord_guild_id && o.ticket_channel_id) { %>
+              <a href="https://discord.com/channels/<%= s.discord_guild_id %>/<%= o.ticket_channel_id %>" target="_blank" rel="noopener" class="btn btn-p btn-sm mt-3">เปิดใน Discord ↗</a>
+            <% } %>
+          </div>
+          <div class="md:col-span-2 bg-ink border border-line rounded-lg p-4 flex flex-col justify-center">
+            <div class="text-xs text-slate-400">เวลาคงเหลือ</div>
+            <div id="cd<%= o.id %>" data-end="<%= o.end_at %>" data-start="<%= o.start_at %>" class="text-3xl font-bold font-mono text-p tabular-nums">--:--:--</div>
+            <div class="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden"><div data-bar="cd<%= o.id %>" class="h-full bg-p transition-all" style="width:100%"></div></div>
+            <div class="text-xs text-slate-400 mt-2">หมดเวลา <%= dt(o.end_at) %></div>
+          </div>
+        </div>
+        <% } %>
+        <p class="px-4 py-2.5 text-xs text-amber-300/90 bg-amber-500/5 border-t border-line">⚠️ ห้ามเปลี่ยนรหัสผ่าน อีเมล หรือข้อมูลใดๆ ของไอดี · กรุณาออกจากเกมก่อนหมดเวลา</p>
+      <% } else if (o.status === 'pending_review') { %>
+        <% if (o.anydesk_id) { %>
+          <div class="border-t border-line px-4 py-3 bg-amber-500/5">
+            <p class="text-sm text-amber-200 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>แอดมินกำลังตรวจสอบสลิป · AnyDesk ID: <b><%= o.anydesk_id %></b></p>
+            <p class="text-xs text-slate-400 mt-1.5">เมื่ออนุมัติแล้ว กรุณาเปิด AnyDesk และหน้า QR Code ของ Valorant ไว้รอแอดมิน remote เข้ามา</p>
+          </div>
+        <% } else { %>
+        <div class="border-t border-line px-4 py-3 flex flex-wrap items-center justify-between gap-3 bg-amber-500/5">
+          <p class="text-sm text-amber-200 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>แอดมินกำลังตรวจสอบสลิป หน้านี้จะอัปเดตอัตโนมัติ</p>
+          <% if (s.allow_user_cancel === '1') { %>
+            <form method="post" action="/orders/<%= o.code %>/cancel" onsubmit="return confirm('ยกเลิกคำสั่งเช่านี้?\nหากโอนเงินแล้ว กรุณาติดต่อแอดมินเพื่อขอคืนเงิน')">
+              <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-g btn-sm">ยกเลิก</button>
+            </form>
+          <% } %>
+        </div>
+        <% } %>
+      <% } else if (o.status === 'rejected') { %>
+        <div class="border-t border-line px-4 py-3 text-sm text-rose-300 bg-rose-500/5">เหตุผล: <%= o.admin_note || 'ไม่ระบุ' %> · หากมีข้อสงสัยกรุณาติดต่อแอดมิน</div>
+      <% } %>
+    </div>
+  <% }) %>
+  </div>
+</div>
+
+<% if (pendingN) { %>
+<script>
+  setInterval(async () => {
+    try { const d = await (await fetch('/orders/poll')).json(); if (d.pending < <%= pendingN %>) location.reload(); } catch (e) {}
+  }, 10000);
+</script>
+<% } %>

@@ -1,0 +1,39 @@
+<% const tabs = [['pending_review', 'รอตรวจสอบ'], ['active', 'กำลังเช่า'], ['completed', 'เสร็จสิ้น'], ['rejected', 'ไม่อนุมัติ'], ['cancelled', 'ยกเลิก'], ['all', 'ทั้งหมด']]; %>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+  <div class="flex gap-1 overflow-x-auto bg-card border border-line rounded-lg p-1">
+    <% tabs.forEach(([k, l]) => { const c = k === 'all' ? Object.values(counts).reduce((a, b) => a + b, 0) : (counts[k] || 0); %>
+      <a href="?status=<%= k %>" class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap <%= status === k ? 'bg-p text-white' : 'text-slate-300 hover:bg-white/5' %>"><%= l %> <span class="opacity-60"><%= c %></span></a>
+    <% }) %>
+  </div>
+  <form class="flex gap-2">
+    <input type="hidden" name="status" value="<%= status %>">
+    <input name="q" value="<%= q %>" placeholder="ค้นหารหัส / ผู้ใช้ / ไอดี" class="inp w-60">
+    <button class="btn btn-g">ค้นหา</button>
+  </form>
+</div>
+
+<div class="card overflow-x-auto">
+  <table class="tbl w-full min-w-[760px]">
+    <thead><tr><th>ออเดอร์</th><th>ผู้เช่า</th><th>ไอดี</th><th>ชม.</th><th>ยอด</th><th>สถานะ</th><th>เวลา</th><th></th></tr></thead>
+    <tbody>
+    <% orders.forEach(o => { const st = ORDER_STATUS[o.status]; %>
+      <tr class="hover:bg-white/[.02]">
+        <td class="font-mono text-xs">#<%= o.code %></td>
+        <td><%= o.username %></td>
+        <td class="max-w-[220px] truncate"><%= o.title %></td>
+        <td><%= o.hours %></td>
+        <td class="font-semibold">฿<%= money(o.total) %></td>
+        <td><span class="badge <%= st.cls %>"><%= st.label %></span></td>
+        <td class="text-xs text-slate-400">
+          <% if (o.status === 'active') { %>เหลือ <span id="o<%= o.id %>" data-end="<%= o.end_at %>" class="font-mono text-p"></span>
+          <% } else { %><%= dt(o.created_at) %><% } %>
+        </td>
+        <td class="text-right">
+          <a href="/admin/orders/<%= o.id %>" class="btn btn-sm <%= o.status === 'pending_review' ? 'btn-p' : 'btn-g' %>"><%= o.status === 'pending_review' ? 'ตรวจสลิป' : 'ดู' %></a>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (!orders.length) { %><tr><td colspan="8" class="text-center text-slate-500 py-10">ไม่มีรายการ</td></tr><% } %>
+    </tbody>
+  </table>
+</div>

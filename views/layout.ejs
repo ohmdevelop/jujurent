@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="th">
+<head><%- include('partials/head') %></head>
+<body class="min-h-screen flex flex-col pb-16 md:pb-0">
+<% if (s.announcement) { %>
+  <div class="bg-p text-white text-sm text-center px-4 py-2"><%= s.announcement %></div>
+<% } %>
+<header class="sticky top-0 z-40 bg-ink/85 backdrop-blur border-b border-line">
+  <div class="max-w-7xl mx-auto px-4 h-16 flex items-center gap-6">
+    <a href="/" class="flex items-center gap-2.5 font-bold text-lg tracking-wide">
+      <span class="w-8 h-8 bg-p cut grid place-items-center text-sm">V</span><%= s.site_name %>
+    </a>
+    <nav class="hidden md:flex items-center gap-1 text-sm">
+      <% [['/', 'ไอดีทั้งหมด'], ['/orders', 'ประวัติการเช่า'], ['/rules', 'กติกา']].forEach(([href, label]) => { %>
+        <a href="<%= href %>" class="px-3 py-2 rounded-lg hover:bg-white/5 <%= path === href ? 'text-p' : 'text-slate-300' %>"><%= label %></a>
+      <% }) %>
+    </nav>
+    <div class="ml-auto flex items-center gap-2">
+      <% if (user) { %>
+        <% if (user.role === 'admin') { %><a href="/admin" class="btn btn-g btn-sm">หลังบ้าน</a><% } %>
+        <span class="hidden sm:inline text-sm text-slate-400">👤 <%= user.username %></span>
+        <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-g btn-sm">ออก</button></form>
+      <% } else { %>
+        <a href="/login" class="btn btn-g btn-sm">เข้าสู่ระบบ</a>
+        <% if (s.allow_register === '1') { %><a href="/register" class="btn btn-p btn-sm">สมัครสมาชิก</a><% } %>
+      <% } %>
+    </div>
+  </div>
+</header>
+
+<% if (flash) { %>
+  <div id="toast" class="fixed top-20 right-4 z-50 max-w-sm px-4 py-3 rounded-lg shadow-2xl border text-sm
+    <%= flash.type === 'error' ? 'bg-rose-950 border-rose-700 text-rose-100' : 'bg-emerald-950 border-emerald-700 text-emerald-100' %>">
+    <%= flash.type === 'error' ? '⚠️' : '✅' %> <%= flash.msg %>
+  </div>
+<% } %>
+
+<main class="flex-1"><%- body %></main>
+
+<footer class="border-t border-line mt-16">
+  <div class="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-4 justify-between text-sm text-slate-400">
+    <p>© <%= new Date().getFullYear() %> <%= s.site_name %> · ไม่มีส่วนเกี่ยวข้องกับ Riot Games</p>
+    <div class="flex flex-wrap gap-4">
+      <% if (s.contact_line) { %><span>LINE: <b class="text-slate-200"><%= s.contact_line %></b></span><% } %>
+      <% if (s.contact_facebook) { %><a href="<%= s.contact_facebook %>" target="_blank" rel="noopener" class="hover:text-white">Facebook</a><% } %>
+      <% if (s.contact_discord) { %><a href="<%= s.contact_discord %>" target="_blank" rel="noopener" class="hover:text-white">Discord</a><% } %>
+    </div>
+  </div>
+</footer>
+
+<nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-line grid grid-cols-3 text-xs">
+  <% [['/', '🎮', 'ไอดี'], ['/orders', '🧾', 'ประวัติ'], ['/rules', '📜', 'กติกา']].forEach(([href, icon, label]) => { %>
+    <a href="<%= href %>" class="py-2.5 flex flex-col items-center gap-0.5 <%= path === href ? 'text-p' : 'text-slate-400' %>">
+      <span class="text-lg leading-none"><%= icon %></span><%= label %>
+    </a>
+  <% }) %>
+</nav>
+<script src="/public/app.js"></script>
+</body>
+</html>

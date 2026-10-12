@@ -1,0 +1,43 @@
+<div class="flex justify-between items-center mb-5">
+  <p class="text-sm text-slate-400">ทั้งหมด <%= accounts.length %> ไอดี</p>
+  <a href="/admin/accounts/new" class="btn btn-p">+ เพิ่มไอดี</a>
+</div>
+<div class="card overflow-x-auto">
+  <table class="tbl w-full min-w-[900px]">
+    <thead><tr><th>ไอดี</th><th>แรงค์</th><th>ราคา/ชม.</th><th>สถานะ</th><th>แสดงผล</th><th>เช่าแล้ว</th><th class="text-right">จัดการ</th></tr></thead>
+    <tbody>
+    <% accounts.forEach(a => { const st = ACC_STATUS[a.status]; const locked = ['reserved', 'rented'].includes(a.status); %>
+      <tr>
+        <td>
+          <div class="flex items-center gap-3">
+            <div class="w-16 h-10 rounded bg-ink overflow-hidden shrink-0"><% if (a.image_url) { %><img src="<%= a.image_url %>" alt="" class="w-full h-full object-cover"><% } %></div>
+            <div class="min-w-0"><div class="font-medium truncate max-w-[240px]"><%= a.title %></div><div class="text-xs text-slate-500 font-mono"><%= a.riot_username %></div></div>
+          </div>
+        </td>
+        <td><%= a.rank || '-' %></td>
+        <td>฿<%= money(a.price_per_hour) %></td>
+        <td><span class="badge <%= st.cls %>"><%= st.label %></span></td>
+        <td><%= a.is_visible ? '👁 แสดง' : '🚫 ซ่อน' %></td>
+        <td><%= a.rentals %> ครั้ง</td>
+        <td>
+          <div class="flex justify-end gap-1.5">
+            <% if (!locked) { %>
+              <form method="post" action="/admin/accounts/<%= a.id %>/status">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <input type="hidden" name="status" value="<%= a.status === 'available' ? 'maintenance' : 'available' %>">
+                <button class="btn btn-g btn-sm"><%= a.status === 'available' ? 'ปิดชั่วคราว' : 'เปิดให้เช่า' %></button>
+              </form>
+            <% } %>
+            <a href="/admin/accounts/<%= a.id %>/edit" class="btn btn-g btn-sm">แก้ไข</a>
+            <form method="post" action="/admin/accounts/<%= a.id %>/delete" onsubmit="return confirm('ลบไอดีนี้?')">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <button class="btn btn-sm text-rose-400 hover:bg-rose-500/10">ลบ</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (!accounts.length) { %><tr><td colspan="7" class="text-center text-slate-500 py-10">ยังไม่มีไอดี กด "+ เพิ่มไอดี" เพื่อเริ่มต้น</td></tr><% } %>
+    </tbody>
+  </table>
+</div>

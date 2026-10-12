@@ -1,0 +1,19 @@
+<div class="min-h-[70vh] grid place-items-center px-4 py-12">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="w-14 h-14 bg-p cut grid place-items-center text-2xl font-bold mx-auto">V</div>
+      <h1 class="text-2xl font-bold mt-4">เข้าสู่ระบบ</h1>
+      <p class="text-slate-400 text-sm mt-1">ยินดีต้อนรับกลับสู่ <%= s.site_name %></p>
+    </div>
+    <form method="post" action="/login" class="card p-6 space-y-4">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="next" value="<%= nextUrl %>">
+      <div><label class="lbl">ชื่อผู้ใช้</label><input name="username" class="inp" required autofocus autocomplete="username"></div>
+      <div><label class="lbl">รหัสผ่าน</label><input type="password" name="password" class="inp" required autocomplete="current-password"></div>
+      <button class="btn btn-p w-full py-3">เข้าสู่ระบบ</button>
+    </form>
+    <% if (s.allow_register === '1') { %>
+      <p class="text-center text-sm text-slate-400 mt-5">ยังไม่มีบัญชี? <a href="/register" class="text-p hover:underline">สมัครสมาชิก</a></p>
+    <% } %>
+  </div>
+</div>

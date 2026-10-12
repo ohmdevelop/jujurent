@@ -1,0 +1,57 @@
+<form method="post" class="space-y-6 max-w-4xl">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% Object.entries(groups).forEach(([g, fields]) => { %>
+    <div class="card p-6">
+      <h2 class="font-semibold text-lg mb-4"><%= g %></h2>
+      <div class="grid md:grid-cols-2 gap-5">
+        <% fields.forEach(f => { const v = values[f.key]; %>
+          <div class="<%= f.type === 'textarea' ? 'md:col-span-2' : '' %>">
+            <% if (f.type === 'bool') { %>
+              <label class="flex items-center justify-between gap-4 bg-ink border border-line rounded-lg px-4 py-3 cursor-pointer h-full">
+                <span><span class="block text-sm"><%= f.label %></span><% if (f.hint) { %><span class="block text-xs text-slate-500"><%= f.hint %></span><% } %></span>
+                <input type="checkbox" name="<%= f.key %>" value="1" <%= v === '1' ? 'checked' : '' %> class="peer sr-only">
+                <span class="relative w-11 h-6 shrink-0 rounded-full bg-white/10 peer-checked:bg-p transition after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-5"></span>
+              </label>
+            <% } else { %>
+              <label class="lbl"><%= f.label %></label>
+              <% if (f.type === 'textarea') { %>
+                <textarea name="<%= f.key %>" rows="<%= f.rows || 3 %>" class="inp"><%= v %></textarea>
+              <% } else if (f.type === 'color') { %>
+                <div class="flex gap-2 items-center">
+                  <input type="color" name="<%= f.key %>" value="<%= v %>" class="h-11 w-16 bg-ink border border-line rounded-lg cursor-pointer">
+                  <span class="font-mono text-sm text-slate-400"><%= v %></span>
+                </div>
+              <% } else if (f.type === 'password') { %>
+                <input type="password" name="<%= f.key %>" autocomplete="new-password" class="inp" placeholder="<%= v ? '•••••• ตั้งค่าแล้ว (เว้นว่างถ้าไม่เปลี่ยน)' : 'ยังไม่ได้ตั้งค่า' %>">
+              <% } else { %>
+                <input type="<%= f.type === 'number' ? 'number' : 'text' %>" <%= f.type === 'number' ? 'step=any' : '' %> name="<%= f.key %>" value="<%= v %>" class="inp">
+              <% } %>
+              <% if (f.hint) { %><p class="text-xs text-slate-500 mt-1"><%= f.hint %></p><% } %>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  <% }) %>
+  <div class="sticky bottom-4 flex justify-end">
+    <button class="btn btn-p shadow-2xl px-8 py-3">💾 บันทึกการตั้งค่า</button>
+  </div>
+</form>
+
+<form method="post" action="/admin/settings/test-notify" class="max-w-4xl mt-6 card p-6 flex flex-wrap items-center justify-between gap-4">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div>
+    <h2 class="font-semibold">ทดสอบการแจ้งเตือนแอดมิน</h2>
+    <p class="text-sm text-slate-400">ทดสอบ Discord Webhook / LINE (กดบันทึกการตั้งค่าก่อน)</p>
+  </div>
+  <button class="btn btn-g">🔔 ส่งข้อความทดสอบ</button>
+</form>
+
+<form method="post" action="/admin/settings/test-discord-bot" class="max-w-4xl mt-4 card p-6 flex flex-wrap items-center justify-between gap-4">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div>
+    <h2 class="font-semibold">ทดสอบ Discord Bot ส่งรหัส</h2>
+    <p class="text-sm text-slate-400">ตรวจ Token, Server ID และหมวด ticket</p>
+  </div>
+  <button class="btn btn-g">🤖 ทดสอบบอท</button>
+</form>

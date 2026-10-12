@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="th">
+<head><%- include('../partials/head') %></head>
+<body>
+<%
+  const menu = [['/admin', '📊', 'ภาพรวม'], ['/admin/orders', '🧾', 'คำสั่งเช่า'], ['/admin/accounts', '🎮', 'จัดการไอดี'], ['/admin/users', '👥', 'สมาชิก'], ['/admin/settings', '⚙️', 'ตั้งค่าระบบ']];
+  const isOn = (href) => href === '/admin' ? (path === '/admin' || path === '/admin/') : path.startsWith(href);
+%>
+<div class="flex min-h-screen">
+  <aside class="hidden lg:flex w-64 shrink-0 flex-col bg-card border-r border-line sticky top-0 h-screen">
+    <a href="/admin" class="h-16 flex items-center gap-2.5 px-5 font-bold border-b border-line">
+      <span class="w-8 h-8 bg-p cut grid place-items-center text-sm">V</span><%= s.site_name %> <span class="text-xs text-slate-500">ADMIN</span>
+    </a>
+    <nav class="flex-1 p-3 space-y-1 text-sm">
+      <% menu.forEach(([href, icon, label]) => { %>
+        <a href="<%= href %>" class="flex items-center gap-3 px-3 py-2.5 rounded-lg <%= isOn(href) ? 'bg-p text-white' : 'text-slate-300 hover:bg-white/5' %>">
+          <span><%= icon %></span><%= label %>
+          <% if (href === '/admin/orders') { %>
+            <span data-pending class="ml-auto bg-amber-400 text-black text-xs font-bold rounded-full px-2 <%= pendingCount ? '' : 'hidden' %>"><%= pendingCount %></span>
+          <% } %>
+        </a>
+      <% }) %>
+    </nav>
+    <div class="p-3 border-t border-line text-sm">
+      <div class="px-3 pb-3 text-slate-400">👤 <%= user.username %></div>
+      <a href="/" class="btn btn-g btn-sm w-full">← กลับหน้าเว็บ</a>
+    </div>
+  </aside>
+
+  <div class="flex-1 min-w-0">
+    <header class="lg:hidden flex gap-1 overflow-x-auto p-2 bg-card border-b border-line text-sm">
+      <% menu.forEach(([href, icon, label]) => { %>
+        <a href="<%= href %>" class="px-3 py-2 rounded-lg whitespace-nowrap <%= isOn(href) ? 'bg-p text-white' : 'text-slate-300' %>"><%= icon %> <%= label %></a>
+      <% }) %>
+    </header>
+    <div class="px-6 pt-6"><h1 class="text-2xl font-bold"><%= locals.title %></h1></div>
+    <% if (flash) { %>
+      <div id="toast" class="fixed top-4 right-4 z-50 max-w-sm px-4 py-3 rounded-lg shadow-2xl border text-sm
+        <%= flash.type === 'error' ? 'bg-rose-950 border-rose-700 text-rose-100' : 'bg-emerald-950 border-emerald-700 text-emerald-100' %>"><%= flash.msg %></div>
+    <% } %>
+    <main class="p-6"><%- body %></main>
+  </div>
+</div>
+
+<script src="/public/app.js"></script>
+<script>
+  let last = <%= pendingCount %>;
+  const baseTitle = document.title;
+  function beep() { try { const c = new AudioContext(), o = c.createOscillator(); o.connect(c.destination); o.frequency.value = 880; o.start(); o.stop(c.currentTime + 0.25); } catch (e) {} }
+  function notify(msg) {
+    const a = document.createElement('a');
+    a.href = '/admin/orders';
+    a.className = 'fixed bottom-4 right-4 z-50 bg-amber-400 text-black font-semibold px-5 py-3 rounded-lg shadow-2xl';
+    a.textContent = '🔔 ' + msg;
+    document.body.appendChild(a); setTimeout(() => a.remove(), 8000); beep();
+  }
+  setInterval(async () => {
+    try {
+      const { count } = await (await fetch('/admin/api/pending')).json();
+      document.querySelectorAll('[data-pending]').forEach((el) => { el.textContent = count; el.classList.toggle('hidden', !count); });
+      document.title = (count ? `(${count}) ` : '') + baseTitle;
+      if (count > last) notify(`มีออเดอร์ใหม่รอตรวจสอบ (${count})`);
+      last = count;
+    } catch (e) {}
+  }, 15000);
+</script>
+</body>
+</html>

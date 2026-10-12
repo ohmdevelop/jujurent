@@ -1,0 +1,28 @@
+{
+  "name": "valo-rent",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./assets/tailwind.css -o ./public/app.css --minify",
+    "watch:css": "tailwindcss -i ./assets/tailwind.css -o ./public/app.css --watch",
+    "dev": "concurrently -k -n css,app \"npm:watch:css\" \"node --watch server.js\"",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "12.11.1",
+    "better-sqlite3-session-store": "^0.1.0",
+    "concurrently": "^9.0.1",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "express-ejs-layouts": "^2.5.1",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.0",
+    "multer": "^2.0.1",
+    "promptpay-qr": "^0.5.0",
+    "qrcode": "^1.5.4",
+    "tailwindcss": "^3.4.10"
+  }
+}

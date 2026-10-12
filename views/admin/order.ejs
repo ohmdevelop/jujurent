@@ -1,0 +1,150 @@
+<% const st = ORDER_STATUS[o.status]; %>
+<a href="/admin/orders" class="text-sm text-slate-400 hover:text-white">← กลับ</a>
+<div class="mt-4 grid lg:grid-cols-2 gap-6 items-start">
+  <div class="card p-4">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-semibold">สลิปการโอน</h2>
+      <a href="/admin/slip/<%= o.id %>" target="_blank" class="text-sm text-p">เปิดภาพเต็ม ↗</a>
+    </div>
+    <a href="/admin/slip/<%= o.id %>" target="_blank"><img src="/admin/slip/<%= o.id %>" alt="slip" class="w-full max-h-[75vh] object-contain rounded-lg bg-black/30"></a>
+  </div>
+
+  <div class="space-y-6">
+    <div class="card p-6">
+      <div class="flex items-center justify-between">
+        <div><div class="text-xs text-slate-400">ออเดอร์</div><div class="font-mono text-lg">#<%= o.code %></div></div>
+        <span class="badge <%= st.cls %>"><%= st.label %></span>
+      </div>
+      <div class="mt-5 bg-ink border border-line rounded-xl p-5 text-center">
+        <div class="text-sm text-slate-400">ยอดที่ต้องได้รับ</div>
+        <div class="text-4xl font-bold text-p mt-1">฿<%= money(o.total) %></div>
+        <div class="text-xs text-slate-500 mt-1"><%= o.hours %> ชม. × ฿<%= money(o.price_per_hour) %><%= o.discount ? ' (ลด ฿' + money(o.discount) + ')' : '' %></div>
+      </div>
+      <dl class="mt-5 grid grid-cols-3 gap-y-3 text-sm">
+        <dt class="text-slate-400">ผู้เช่า</dt><dd class="col-span-2"><%= o.username %><%= o.contact ? ' · ' + o.contact : '' %></dd>
+        <dt class="text-slate-400">ไอดี</dt><dd class="col-span-2"><a href="/admin/accounts/<%= o.account_id %>/edit" class="text-p hover:underline"><%= o.title %></a></dd>
+        <dt class="text-slate-400">สั่งเมื่อ</dt><dd class="col-span-2"><%= dt(o.created_at) %></dd>
+        <% if (o.start_at) { %>
+          <dt class="text-slate-400">เริ่มเช่า</dt><dd class="col-span-2"><%= dt(o.start_at) %></dd>
+          <dt class="text-slate-400">สิ้นสุด</dt><dd class="col-span-2"><%= dt(o.end_at) %></dd>
+        <% } %>
+        <% if (o.admin_note) { %><dt class="text-slate-400">หมายเหตุ</dt><dd class="col-span-2"><%= o.admin_note %></dd><% } %>
+      </dl>
+    </div>
+
+    <% if (s.discord_delivery === '1' || o.ticket_channel_id) { %>
+      <div class="card p-6 space-y-3">
+        <h3 class="font-semibold">📨 Discord ticket</h3>
+        <% if (o.ticket_channel_id) { %>
+          <p class="text-sm">ห้อง: <a href="https://discord.com/channels/<%= s.discord_guild_id %>/<%= o.ticket_channel_id %>" target="_blank" rel="noopener" class="text-p hover:underline">#<%= o.ticket_channel_name %> ↗</a></p>
+          <p class="text-xs text-slate-400"><%= o.delivered_at ? 'ส่งรหัสแล้วเมื่อ ' + dt(o.delivered_at) : 'ยังไม่ได้ส่งรหัส (จะส่งอัตโนมัติตอนอนุมัติ)' %></p>
+        <% } else { %>
+          <p class="text-sm text-amber-300">ออเดอร์นี้ยังไม่มีห้อง ticket</p>
+        <% } %>
+        <% if (['pending_review', 'active'].includes(o.status)) { %>
+          <form method="post" action="/admin/orders/<%= o.id %>/ticket" class="flex gap-2">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input name="channel" class="inp" placeholder="<%= o.ticket_channel_id ? 'ห้องใหม่ (เว้นว่าง = ห้องเดิม)' : 'ชื่อห้อง / ลิงก์ห้อง ticket' %>">
+            <button class="btn btn-g whitespace-nowrap"><%= o.status === 'active' ? 'ส่งรหัสอีกครั้ง' : 'บันทึกห้อง' %></button>
+          </form>
+        <% } %>
+      </div>
+    <% } %>
+
+    <% if (s.anydesk_delivery === '1' || o.anydesk_id) { %>
+      <div class="card p-6 space-y-3">
+        <h3 class="font-semibold">🖥️ AnyDesk Remote Login</h3>
+        <% if (o.anydesk_id) { %>
+          <div class="bg-ink border border-line rounded-lg p-4">
+            <div class="text-sm text-slate-400">AnyDesk ID</div>
+            <div class="text-2xl font-mono font-bold text-p"><%= o.anydesk_id %></div>
+            <% if (o.remote_status) { %>
+              <div class="mt-3 text-sm">
+                <div class="text-slate-400">สถานะ</div>
+                <div class="font-semibold">
+                  <% if (o.remote_status === 'waiting') { %>🕐 รอแอดมิน Remote เข้าไป
+                  <% } else if (o.remote_status === 'in_progress') { %>⚡ กำลัง Remote อยู่
+                  <% } else if (o.remote_status === 'completed') { %>✅ Login สำเร็จแล้ว
+                  <% } else if (o.remote_status === 'failed') { %>❌ Login ไม่สำเร็จ
+                  <% } %>
+                </div>
+                <% if (o.remote_started_at) { %>
+                  <div class="text-xs text-slate-500 mt-1">เริ่ม remote: <%= dt(o.remote_started_at) %></div>
+                <% } %>
+                <% if (o.remote_completed_at) { %>
+                  <div class="text-xs text-slate-500">สำเร็จ: <%= dt(o.remote_completed_at) %></div>
+                <% } %>
+              </div>
+            <% } %>
+          </div>
+          <% if (o.status === 'active' && o.remote_status !== 'completed') { %>
+            <div class="bg-amber-500/10 text-amber-300 rounded-lg p-3 text-sm space-y-2">
+              <p><strong>วิธีการ Remote Login:</strong></p>
+              <ol class="text-xs space-y-1 list-decimal list-inside">
+                <li>เปิด AnyDesk แล้วใส่เลข <b><%= o.anydesk_id %></b> กด Connect</li>
+                <li>ถามรหัสผ่านจากลูกค้า หรือให้ลูกค้ากด Accept</li>
+                <li>เปิดเกม Valorant ไปที่หน้า Login</li>
+                <li>คลิก "Continue with QR Code" แล้วสแกน QR Code ด้วยมือถือที่ล็อกอินไอดีนี้</li>
+                <li>รอให้เข้าเกมสำเร็จ แล้วกดปุ่ม "Login สำเร็จ" ด้านล่าง</li>
+              </ol>
+            </div>
+            <% if (o.remote_status === 'waiting' || !o.remote_status) { %>
+              <form method="post" action="/admin/orders/<%= o.id %>/remote-start">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <button class="btn btn-g w-full">⚡ เริ่ม Remote (เปลี่ยนสถานะ)</button>
+              </form>
+            <% } %>
+            <% if (o.remote_status === 'in_progress') { %>
+              <form method="post" action="/admin/orders/<%= o.id %>/remote-complete">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <button class="btn btn-ok w-full">✓ Login สำเร็จแล้ว</button>
+              </form>
+            <% } %>
+            <% if (o.remote_status !== 'failed') { %>
+              <form method="post" action="/admin/orders/<%= o.id %>/remote-fail" class="space-y-2">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <input name="note" class="inp" placeholder="เหตุผลที่ Login ไม่ได้ (ถ้ามี)">
+                <button class="btn btn-no w-full">✕ Login ไม่สำเร็จ</button>
+              </form>
+            <% } %>
+          <% } %>
+        <% } else { %>
+          <p class="text-sm text-slate-400">ออเดอร์นี้ไม่ได้ใช้ AnyDesk</p>
+        <% } %>
+      </div>
+    <% } %>
+
+    <% if (o.status === 'pending_review') { %>
+      <div class="card p-6 space-y-4">
+        <h3 class="font-semibold">ผลการตรวจสอบ</h3>
+        <form method="post" action="/admin/orders/<%= o.id %>/approve" onsubmit="return confirm('อนุมัติ? ระบบจะเริ่มนับเวลา <%= o.hours %> ชม. ทันที')">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button class="btn btn-ok w-full py-3 text-lg">✓ อนุมัติ & เริ่มนับเวลา</button>
+        </form>
+        <form method="post" action="/admin/orders/<%= o.id %>/reject" class="space-y-2" onsubmit="return confirm('ยืนยันไม่อนุมัติ?')">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <input name="note" list="reasons" class="inp" placeholder="เหตุผล (ลูกค้าจะเห็นข้อความนี้)">
+          <datalist id="reasons"><option>ยอดเงินไม่ตรง</option><option>สลิปไม่ชัด / ไม่ถูกต้อง</option><option>ไม่พบยอดเงินเข้าบัญชี</option></datalist>
+          <button class="btn btn-no w-full">✕ ไม่อนุมัติ</button>
+        </form>
+      </div>
+    <% } else if (o.status === 'active') { %>
+      <div class="card p-6 space-y-4">
+        <div>
+          <div class="text-sm text-slate-400">เวลาคงเหลือ</div>
+          <div id="cdx" data-end="<%= o.end_at %>" data-start="<%= o.start_at %>" class="text-4xl font-mono font-bold text-p">--:--:--</div>
+          <div class="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden"><div data-bar="cdx" class="h-full bg-p"></div></div>
+        </div>
+        <form method="post" action="/admin/orders/<%= o.id %>/extend" class="flex gap-2">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <input type="number" name="hours" step="0.5" value="1" class="inp" title="ใส่ค่าติดลบเพื่อลดเวลา">
+          <button class="btn btn-g whitespace-nowrap">ปรับเวลา (ชม.)</button>
+        </form>
+        <form method="post" action="/admin/orders/<%= o.id %>/end" onsubmit="return confirm('หยุดการเช่าทันที?')">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button class="btn btn-no w-full">หยุดการเช่าทันที</button>
+        </form>
+      </div>
+    <% } %>
+  </div>
+</div>

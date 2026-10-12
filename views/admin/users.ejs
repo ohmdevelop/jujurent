@@ -1,0 +1,31 @@
+<form class="mb-4 flex gap-2"><input name="q" value="<%= q %>" class="inp w-64" placeholder="ค้นหาชื่อผู้ใช้"><button class="btn btn-g">ค้นหา</button></form>
+<div class="card overflow-x-auto">
+  <table class="tbl w-full min-w-[900px]">
+    <thead><tr><th>ผู้ใช้</th><th>ติดต่อ</th><th>ออเดอร์</th><th>ยอดใช้จ่าย</th><th>สมัครเมื่อ</th><th>สถานะ</th><th class="text-right">จัดการ</th></tr></thead>
+    <tbody>
+    <% users.forEach(u => { const self = u.id === user.id; %>
+      <tr>
+        <td><b><%= u.username %></b> <% if (u.role === 'admin') { %><span class="badge ring-p text-p">ADMIN</span><% } %></td>
+        <td class="text-slate-400"><%= u.contact || '-' %></td>
+        <td><%= u.orders %></td>
+        <td>฿<%= money(u.spent) %></td>
+        <td class="text-xs text-slate-400"><%= dt(u.created_at) %></td>
+        <td><%= u.banned ? '🚫 ถูกแบน' : '✅ ปกติ' %></td>
+        <td>
+          <div class="flex justify-end gap-1.5 flex-wrap">
+            <% if (!self) { %>
+              <form method="post" action="/admin/users/<%= u.id %>/ban"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-sm <%= u.banned ? 'btn-ok' : 'btn-no' %>"><%= u.banned ? 'ปลดแบน' : 'แบน' %></button></form>
+              <form method="post" action="/admin/users/<%= u.id %>/role" onsubmit="return confirm('เปลี่ยนสิทธิ์ผู้ใช้นี้?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-g btn-sm"><%= u.role === 'admin' ? 'ลดเป็น User' : 'ตั้งเป็น Admin' %></button></form>
+            <% } %>
+            <form method="post" action="/admin/users/<%= u.id %>/password" class="flex gap-1" onsubmit="return confirm('รีเซ็ตรหัสผ่าน?')">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input name="password" minlength="8" required placeholder="รหัสใหม่" class="inp py-1.5 w-28 text-sm">
+              <button class="btn btn-g btn-sm">รีเซ็ต</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+</div>

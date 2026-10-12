@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-ink text-slate-100 antialiased; }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold transition active:scale-[.98] disabled:opacity-50 disabled:pointer-events-none; }
+  .btn-p { @apply bg-p text-white hover:brightness-110 shadow-lg; }
+  .btn-g { @apply bg-white/5 text-slate-200 hover:bg-white/10 ring-1 ring-white/10; }
+  .btn-ok { @apply bg-emerald-600 text-white hover:bg-emerald-500; }
+  .btn-no { @apply bg-rose-600 text-white hover:bg-rose-500; }
+  .btn-sm { @apply px-3 py-1.5 text-sm; }
+  .inp { @apply w-full bg-ink border border-line rounded-lg px-3 py-2.5 outline-none transition placeholder:text-slate-500 focus:border-p; }
+  .lbl { @apply block text-sm text-slate-300 mb-1.5; }
+  .card { @apply bg-card border border-line rounded-xl; }
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ring-1; }
+  .step { @apply w-6 h-6 rounded-full bg-p text-white text-xs grid place-items-center shrink-0; }
+  .cut { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%); }
+  .tbl th { @apply text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3 bg-white/[.02]; }
+  .tbl td { @apply px-4 py-3 border-t border-line text-sm align-middle; }
+}

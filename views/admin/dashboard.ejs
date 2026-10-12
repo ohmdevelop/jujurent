@@ -1,0 +1,68 @@
+<% const totalAcc = Object.values(acc).reduce((a, b) => a + b, 0); const maxDay = Math.max(1, ...days.map(d => d.sum)); %>
+<div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+  <% [
+    ['รายได้วันนี้', '฿' + money(today.sum), today.cnt + ' ออเดอร์', ''],
+    ['รายได้เดือนนี้', '฿' + money(month.sum), month.cnt + ' ออเดอร์', ''],
+    ['รอตรวจสอบ', pending.length, 'ออเดอร์', pending.length ? 'text-amber-400' : ''],
+    ['ไอดีว่าง / ทั้งหมด', (acc.available || 0) + ' / ' + totalAcc, 'กำลังเช่า ' + (acc.rented || 0) + ' · สมาชิก ' + users, ''],
+  ].forEach(([k, v, sub, cls]) => { %>
+    <div class="card p-5">
+      <div class="text-sm text-slate-400"><%= k %></div>
+      <div class="text-3xl font-bold mt-1 <%= cls %>"><%= v %></div>
+      <div class="text-xs text-slate-500 mt-1"><%= sub %></div>
+    </div>
+  <% }) %>
+</div>
+
+<div class="card p-5 mt-6">
+  <div class="flex justify-between">
+    <h2 class="font-semibold">รายได้ 7 วันล่าสุด</h2>
+    <span class="text-sm text-slate-400">รวมทั้งหมด ฿<%= money(all.sum) %></span>
+  </div>
+  <div class="mt-6 h-52 flex items-stretch gap-3">
+    <% days.forEach(d => { %>
+      <div class="flex-1 flex flex-col items-center gap-2">
+        <span class="text-xs text-slate-400 h-4"><%= d.sum ? money(d.sum) : '' %></span>
+        <div class="flex-1 w-full flex items-end">
+          <div class="w-full bg-p rounded-t-md opacity-80 hover:opacity-100 transition" style="height:<%= Math.max(2, d.sum / maxDay * 100) %>%"></div>
+        </div>
+        <span class="text-xs text-slate-500"><%= d.label %></span>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<div class="grid xl:grid-cols-2 gap-6 mt-6">
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4 flex justify-between items-center"><h2 class="font-semibold">🔔 รอตรวจสอบสลิป</h2><a href="/admin/orders" class="text-sm text-p">ดูทั้งหมด</a></div>
+    <table class="tbl w-full">
+      <tbody>
+      <% pending.forEach(o => { %>
+        <tr>
+          <td><img src="/admin/slip/<%= o.id %>" class="w-10 h-14 object-cover rounded" alt=""></td>
+          <td><div class="font-medium"><%= o.username %></div><div class="text-xs text-slate-500"><%= o.title %></div></td>
+          <td class="font-semibold">฿<%= money(o.total) %><div class="text-xs text-slate-500 font-normal"><%= o.hours %> ชม.</div></td>
+          <td class="text-right"><a href="/admin/orders/<%= o.id %>" class="btn btn-p btn-sm">ตรวจสลิป</a></td>
+        </tr>
+      <% }) %>
+      <% if (!pending.length) { %><tr><td class="text-center text-slate-500 py-8">ไม่มีออเดอร์รอตรวจ 🎉</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4"><h2 class="font-semibold">🟢 กำลังเช่าอยู่</h2></div>
+    <table class="tbl w-full">
+      <tbody>
+      <% active.forEach(o => { %>
+        <tr>
+          <td><div class="font-medium"><%= o.title %></div><div class="text-xs text-slate-500"><%= o.username %></div></td>
+          <td><span id="a<%= o.id %>" data-end="<%= o.end_at %>" class="font-mono text-p"></span></td>
+          <td class="text-right"><a href="/admin/orders/<%= o.id %>" class="btn btn-g btn-sm">จัดการ</a></td>
+        </tr>
+      <% }) %>
+      <% if (!active.length) { %><tr><td class="text-center text-slate-500 py-8">ยังไม่มีการเช่า</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
